@@ -1,0 +1,125 @@
+﻿@page "/login"
+
+@inject IJSRuntime js
+
+
+
+@inject IJSRuntime js
+@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager nm
+
+<PageTitle>Login </PageTitle>
+
+
+
+
+<div class="container">
+    <div class="row align-items-center justify-content-center">
+
+        <div class="col-md-5 mt-5">
+            <div class="login-top-height">
+                <div class="card text-center">
+                    <h1>LabExam</h1>
+                    <div class="card-body shadow-lg">
+                        @if (@check)
+                        {
+                            <label>Username & password are incorrect</label>
+                        }
+                        <input type="text" placeholder="Enter email" class="form-control mb-2" @bind-value="Email" />
+                        <input type="password" placeholder="Enter password" class="form-control mb-2" @bind-value="Password" />
+
+                        <div class="text-center  mt-4 pt-2">
+                            <button type="button" class="w-100 btn btn-lg btn-primary"
+                                    @onclick="Authenticate">
+                                Login
+                            </button>
+                            <p class="small  mt-2 fs-5 pt-1 mb-0 text-black">
+                                Don't have an account? <a href="register" style="color:blue;"
+                                                          class="text-decoration-none">Register</a>
+                            </p>
+
+
+                            @if (check)
+                            {
+                                <h6 class="text-danger text-center">@message </h6>
+                            }
+                        </div>
+                       
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+
+@code {
+
+
+
+    private EntUserLogin _Model { get; set; } = new EntUserLogin();
+
+    public string? Email { get; set; }
+    public string? Password { get; set; }
+    public string? ID { get; set; }
+    public string? Passwrd { get; set; }
+    public string? EncPass { get; set; }
+    public string? message { get; set; }
+    bool check = false;
+
+    public string DecodeFrom64(string encodedData)
+    {
+        System.Text.UTF8Encoding encoder = new System.Text.UTF8Encoding();
+        System.Text.Decoder utf8Decode = encoder.GetDecoder();
+        byte[] todecode_byte = Convert.FromBase64String(encodedData);
+        int charCount = utf8Decode.GetCharCount(todecode_byte, 0, todecode_byte.Length);
+        char[] decoded_char = new char[charCount];
+        utf8Decode.GetChars(todecode_byte, 0, todecode_byte.Length, decoded_char, 0);
+        string result = new String(decoded_char);
+        return result;
+    }
+
+
+    private async Task Authenticate()
+    {
+
+        _Model = DALCRUD.GetUserByName(Email);
+        _Model.Email = Email;
+        ID = _Model.UserId;
+        Passwrd = DecodeFrom64(_Model.Password);
+
+
+
+        if (_Model == null || Passwrd != Password)
+        {
+
+            check = true;
+            message = "Invalid UserName and Password ! ";
+
+        }
+        else
+        {
+
+            var customAuthStateProvider = (CustomAuthenticationStateProvider)authStateProvider;
+            await customAuthStateProvider.UpdateAuthenticationState(new UserSession
+                {
+                    UserId = _Model.UserId,
+                    UserName = _Model.Email,
+                    Role = _Model.Role
+
+                });
+
+            nm.NavigateTo("/", true);
+        }
+
+    }
+
+
+
+
+
+
+
+}
